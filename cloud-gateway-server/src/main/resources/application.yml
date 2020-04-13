@@ -1,0 +1,38 @@
+server:
+  port: 9999
+
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true # 开启从注册中心动态创建路由的功能，利用微服务名称进行路由
+      routes:
+        - id: pm1
+#          uri: http://localhost:8001
+          uri: lb://PAYMENT-SERVICE
+          filter:
+            - AddRequestParameter=X-Request-Id,1024 #过虑器会在匹配的请求头上添加头，名为X-Request-Id值为1024
+          predicates:
+            - Path=/payment/**
+            - After=2020-04-03T21:00:00.123+08:00[Asia/Shanghai] # 在这个时间后生效
+            - Cookie=username,www # 必须带有Cookie且key=username, value=www
+            - Header=X-Request-Id, \d+ # 请求头要有 X-Request-Id属性并且值为整数的正则表达式
+            - Host=**.alphar.me,**.alphar2.me #
+            - Method=GET
+            - Query=username, \d+ # 要有参数名为username并且值是整数才能生效
+#            - Before
+#            - Between
+
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://eureka7001.com:7001/eureka/,http://eureka7002.com:7002/eureka/
+  instance:
+    instance-id: gateway
+    prefer-ip-address: true
